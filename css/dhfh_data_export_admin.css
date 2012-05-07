@@ -1,0 +1,38 @@
+.error, .warning {
+  max-width: 600px;
+  margin: 10px 0 20px 0;
+  padding: 6px 10px;
+  border: 1px solid #D8D8D8;
+  -webkit-border-radius: 4px
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.error {
+  border-color: #EED3D7;
+  background-color: #F2DEDE;
+}
+.warning {
+  background-color: #FFFFCC;
+}
+
+.dhfh_data_export_admin h3 {
+  margin-top: 35px;
+}
+.dhfh_data_export_admin .label {
+  margin-right: 10px;
+  float: left;
+  vertical-align: middle;
+  font-weight: bold;
+}
+
+.export_option {
+  margin: 10px;
+}
+.export .button {
+  margin: 5px 0 0 20px;
+}
+
+.clear {
+  clear:both;
+}
