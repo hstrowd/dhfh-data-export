@@ -1,4 +1,4 @@
-.error, .warning {
+.error, .warning, .success {
   max-width: 600px;
   margin: 10px 0 20px 0;
   padding: 6px 10px;
@@ -14,6 +14,13 @@
 }
 .warning {
   background-color: #FFFFCC;
+}
+.success {
+  background-color: #C3FDB8;
+}
+
+.dhfh_data_export_admin h2 {
+  padding-top: 15px;
 }
 
 .dhfh_data_export_admin h3 {
@@ -31,8 +38,4 @@
 }
 .export .button {
   margin: 5px 0 0 20px;
-}
-
-.clear {
-  clear:both;
 }
