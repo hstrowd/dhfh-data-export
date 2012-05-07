@@ -2,30 +2,6 @@
 <div id="icon-options-general" class="icon32"><br></div>
 <h2>DHFH Data Export</h2>
 
-<?php
-  if(count($exported_files) > 0) { 
- ?>
-<div class="export">
-  <h3>Exported Files</h3>
-  <p>The following files are available for downloading:</p>
-  <ul>
-  <?php
-	foreach($exported_files as $output_filename) {
-   ?>
-    <li>
-      <a href="<?php echo DHFH_DATA_EXPORT_URL . '/exported_files/' . $output_filename; ?>">
-        <?php echo $output_filename; ?>
-      </a>
-    </li>
-  <?php
-	}
-   ?>
-  </ul>
-</div>
-<?php
-  }
- ?>
-
 <div class="export_actions">
   <h3>Export Actions</h3>
   <p>To export content to be imported into Raisers edge, please select from the options below:</p>
@@ -62,3 +38,26 @@
   </form>
 </div>
 
+<?php
+  if(count($exported_files) > 0) { 
+ ?>
+<div class="export">
+  <h3>Exported Files</h3>
+  <p>The following files are available for downloading:</p>
+  <ul>
+  <?php
+    foreach(array_reverse($exported_files) as $output_filename) {
+   ?>
+    <li>
+      <a href="<?php echo DHFH_DATA_EXPORT_URL . '/exported_files/' . $output_filename; ?>">
+        <?php echo $output_filename; ?>
+      </a>
+    </li>
+  <?php
+	}
+   ?>
+  </ul>
+</div>
+<?php
+  }
+ ?>
