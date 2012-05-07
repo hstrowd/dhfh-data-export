@@ -9,11 +9,6 @@ class DHFHExporter {
   }
 
   public function __construct() {
-    // Ensure the export output directory exists.
-    if(!is_dir(self::output_dir()) && !mkdir(self::output_dir())) {
-      // Set notice to notify the user that the backups directory could not be created.
-      add_action('admin_notices', array( &$this, 'unable_to_create_output_dir' ));
-    }
   }
 
   public function export_content($content_to_export, $mark_as_exported) {
@@ -206,11 +201,6 @@ class DHFHExporter {
       echo "Not data to be written for $keyword";
       return;
     }
-  }
-
-  public function unable_to_create_output_dir() {
-    echo "<div class=\"warning\">Unable to create the export output directory in the " . self::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
-    remove_action('admin_notices', array( &$this, 'unable_to_create_output_dir' ));
   }
 
   public function generic_export_not_active() {

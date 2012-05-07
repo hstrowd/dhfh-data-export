@@ -28,6 +28,7 @@ License: GPL2
 /* TODO List:
     - Separate out the admin support from the export functionality.
     - Add a readme.
+    - List the dependency on generic exporter.
 */
 
 define("DHFH_DATA_EXPORT_DIR", WP_PLUGIN_DIR."/dhfh-data-export");
@@ -36,7 +37,7 @@ define("DHFH_DATA_EXPORT_URL", WP_PLUGIN_URL."/dhfh-data-export");
 require_once( DHFH_DATA_EXPORT_DIR . '/dhfh-exporter.php' );
 
 // Handlers for user actions
-if($_POST['action']); {
+if(($_POST['page'] == 'dhfh-data-export') && $_POST['action']) {
   $dhfh_export = new DHFHExporter();
   $raw_cvs_file = $_POST['raw-csv'];
   switch ($_POST['action']) {
@@ -55,6 +56,14 @@ if($_POST['action']); {
     $re_content = $dhfh_export->transform($csv_content); 
     $dhfh_export->save_output($re_content, 'all');
     break;
+  }
+}
+
+if($_GET['page'] == 'dhfh-data-export') {
+  // Ensure the export output directory exists.
+  if(!is_dir(DHFHExporter::output_dir()) && !mkdir(DHFHExporter::output_dir())) {
+    // Set notice to notify the user that the backups directory could not be created.
+    add_action('admin_notices', 'unable_to_create_output_dir' );
   }
 }
 
@@ -169,3 +178,8 @@ function dhfh_data_export_styles() {
 }
 
 /* Required WordPress Hooks -- END */
+
+function unable_to_create_output_dir() {
+  echo "<div class=\"warning\">Unable to create the export output directory in the " . DHFHExporter::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
+  remove_action('admin_notices', 'unable_to_create_output_dir' );
+}
