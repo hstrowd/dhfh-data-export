@@ -18,6 +18,12 @@
 .success {
   background-color: #C3FDB8;
 }
+.info {
+  max-width: 600px;
+  padding: 0px;
+  margin: 0 0 0 15px;
+  font-size: 11px;
+}
 .notice ul{
   margin: 5px 0;
 }

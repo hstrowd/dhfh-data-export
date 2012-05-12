@@ -1,5 +1,5 @@
 <div class="dhfh_data_export_admin">
-<div id="icon-options-general" class="icon32"><br></div>
+<div id="icon-tools" class="icon32"><br></div>
 <h2>DHFH Data Export</h2>
 
 <div class="export_actions">
@@ -7,6 +7,7 @@
   <p>To export content to be imported into Raisers edge, please select from the options below:</p>
 
   <form id="dhfh-export-content" method="post">
+    <input name="page" type="hidden" value="dhfh-data-export">
     <input name="action" type="hidden" value="dhfh-export-content">       
     <input type="hidden" name="_wp_http_referer" 
       value="/restore_dev/wp-admin/options-general.php?page=dhfh-data-export">
@@ -23,6 +24,9 @@
           <span>All Records</span>
         </label>
       </div>
+      <div class="clear"></div>
+
+      <div class="info">The content to be included in the result of the export. 'Records Not Previously Exported' will result in only records that have not been marked as exported being included. 'All Records' will result in every record of this content type being included.</div>
     </div>
 
     <div id="mark_as_exported" class="export_option">
@@ -30,6 +34,9 @@
       <div class="mark_as_exported_selection">
         <input type="checkbox" name="mark-as-exported" value="1" checked>
       </div>
+      <div class="clear"></div>
+
+      <div class="info">Sets whether or not to mark the records returned as having been exported. If this is selected, these entries exported will not appear in subsequent exports with the 'Records Not Previously Exported' option selected.</div>
     </div>
 
     <div>
@@ -46,6 +53,7 @@
   <p>The following files are available for downloading:</p>
   <span class="warning notice">To clean up these files, check the checkbox next to the associated files and click the Delete button below.</span>
   <form id="dhfh-delete-output-files" method="post">
+    <input name="page" type="hidden" value="dhfh-data-export">
     <input name="action" type="hidden" value="dhfh-delete-output-files">
     <input type="hidden" name="_wp_http_referer" 
       value="/restore_dev/wp-admin/options-general.php?page=dhfh-data-export">

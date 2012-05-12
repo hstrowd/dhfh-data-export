@@ -37,42 +37,60 @@ require_once( DHFH_DATA_EXPORT_DIR . '/dhfh-exporter.php' );
  *  BEGIN: Handle user actions.
  */
 
-if($_POST['action']) {
+// Loads a DHFHExporter and verifies that in was initialized properly.
+function load_dhfh_exporter() {
+  $exporter = new DHFHExporter();
+
+  if($exporter->unable_to_create_output_dir)
+    add_action('admin_notices', 'unable_to_create_output_dir');
+
+  return $exporter;
+}
+
+if($_POST['page'] == 'dhfh-data-export') {
+  $dhfh_exporter = load_dhfh_exporter();
+
   switch ($_POST['action']) {
   case 'dhfh-export-content':
-    $dhfh_exporter = new DHFHExporter();
-
     // Isolate Inputs
     $content_to_export = $_POST['content-to-export'];
     $mark_as_exported = $_POST['mark-as-exported'];
 
     // Produce CSV Output
-    $csv_content = $dhfh_exporter->export_content($content_to_export, $mark_as_exported);
-    if(isset($csv_content) && (count($csv_content) > 0)) {
-      $re_content = $dhfh_exporter->transform($csv_content); 
-      if(($output_filenames = $dhfh_exporter->save_output($re_content, $content_to_export)) &&
-	 (count($output_filenames) > 0)) {
-	// Notify the User.
-	add_action('admin_notices', 'successfully_exported_content');
+    $export_result = $dhfh_exporter->export_content($content_to_export, $mark_as_exported);
+
+    switch($export_result[0]) {
+    case 'success':
+      $csv_content = $export_result[1];
+
+      if(isset($csv_content) && (count($csv_content) > 0)) {
+	$re_content = $dhfh_exporter->transform($csv_content); 
+	if(($output_filenames = $dhfh_exporter->save_output($re_content, $content_to_export)) &&
+	   (count($output_filenames) > 0)) {
+	  // Notify the User.
+	  add_action('admin_notices', 'successfully_exported_content');
+	}
+      } else {
+	// Defined by the Generic Export plugin.
+	add_action('admin_notices', 'no_content_to_export');
       }
+
+      break;
+    default:
+      // If the export did not succeed, notify the user of the result as a notice.
+      add_action('admin_notices', $export_result[0]);      
+      break;
     }
     break;
   case 'dhfh-delete-output-files':
-    $dhfh_exporter = new DHFHExporter();
-    
     $dhfh_exporter->clean_output_files($_POST['output-files-to-delete']);
-
     break;
   }
 }
 
 if($_GET['page'] == 'dhfh-data-export') {
   // Verify that everything initializes correctly.
-  $dhfh_exporter = new DHFHExporter();
-
-  if($dhfh_exporter->unable_to_create_output_dir)
-    add_action('admin_notices', 'unable_to_create_output_dir' );
-
+  $dhfh_exporter = load_dhfh_exporter();
 }
 
 /**
@@ -97,13 +115,13 @@ if ( is_admin() ) {
 }
 
 function dhfh_data_export_menu() {
-  add_options_page( __('DHFH Data Export Options', 'dhfh data export'), 
-		      __('DHFH Data Export', 'dhfh data exporter'),
-		      'manage_options', 
-		      'dhfh-data-export',
-		      'dhfh_data_export_options',
-		      '',
-		      '' );
+  add_management_page( __('DHFH Data Export Options', 'dhfh data export'), 
+		       __('DHFH Data Export', 'dhfh data exporter'),
+		       'manage_options', 
+		       'dhfh-data-export',
+		       'dhfh_data_export_options',
+		       '',
+		       '' );
 }
 
 // Defines the content for the admin page.
@@ -137,6 +155,7 @@ function dhfh_data_export_scripts() {
 		     array('jquery') );
 }
 
+// Checks that all dependent plugin are installed and active.
 function verify_dependencies() {
   require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
 

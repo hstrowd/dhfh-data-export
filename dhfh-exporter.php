@@ -49,18 +49,23 @@ class DHFHExporter {
 
     require_once( WP_PLUGIN_DIR . '/generic-export/generic-exporter.php' );
     $generic_exporter = new GenericExporter();
-    $export_result = $generic_exporter->export_content('visual-form-builder', $content_to_export, $mark_as_exported, true);
+    $export_result = $generic_exporter->export_content('visual-form-builder', $content_to_export, $mark_as_exported);
 
-    $filename = $export_result[0];
-    $csv_content = $export_result[1];
+    switch($export_result[0]) {
+    case 'success':
+      $filename = $export_result[1];
+      $csv_content = $export_result[2];
 
-    // Convert the CSV into an array of associative arrays.
-    require_once( DHFH_DATA_EXPORT_DIR . '/lib/parsecsv-0.4.3-beta/parsecsv.lib.php' );
-    $parse_csv = new ParseCSV();
-    $parse_csv->parse($csv_content);
-    $rows = $parse_csv->data;
+      // Convert the CSV into an array of associative arrays.
+      require_once( DHFH_DATA_EXPORT_DIR . '/lib/parsecsv-0.4.3-beta/parsecsv.lib.php' );
+      $parse_csv = new ParseCSV();
+      $parse_csv->parse($csv_content);
+      $rows = $parse_csv->data;
 
-    return $rows;
+      return array('success', $rows);
+    default:
+      return $export_result;
+    }
   }
 
   /**
@@ -272,7 +277,7 @@ class DHFHExporter {
 
 
   /**
-   *  END: Delete Old Output Files
+   *  BEGIN: Delete Old Output Files
    */
 
   public function clean_output_files($filenames) {
