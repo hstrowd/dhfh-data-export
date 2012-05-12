@@ -1,4 +1,8 @@
 <?php
+
+// Include the plugin constants.
+require_once( plugin_dir_path( __FILE__ ) . 'constants.php' );
+
 // Encapsulates all Export Functionality for the DuPage Habitat For Humanity forms.
 class DHFHExporter {
 
@@ -20,6 +24,15 @@ class DHFHExporter {
   /**
    *  END: Static Content
    */
+
+
+  public function __construct() {
+    // Ensure the export output directory exists.
+    if(!is_dir(self::output_dir()) && !mkdir(self::output_dir())) {
+      // Set notice to notify the user that the output directory could not be created.
+      $this->unable_to_create_output_dir = true;
+    }
+  }
 
 
   /**

@@ -26,9 +26,8 @@ License: GPL2
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-// Define plugin constants.
-define("DHFH_DATA_EXPORT_DIR", WP_PLUGIN_DIR."/dhfh-data-export");
-define("DHFH_DATA_EXPORT_URL", WP_PLUGIN_URL."/dhfh-data-export");
+// Include the plugin constants.
+require_once( plugin_dir_path( __FILE__ ) . 'constants.php' );
 
 // Require internal files.
 require_once( DHFH_DATA_EXPORT_DIR . '/dhfh-exporter.php' );
@@ -41,17 +40,17 @@ require_once( DHFH_DATA_EXPORT_DIR . '/dhfh-exporter.php' );
 if($_POST['action']) {
   switch ($_POST['action']) {
   case 'dhfh-export-content':
-    $dhfh_export = new DHFHExporter();
+    $dhfh_exporter = new DHFHExporter();
 
     // Isolate Inputs
     $content_to_export = $_POST['content-to-export'];
     $mark_as_exported = $_POST['mark-as-exported'];
 
     // Produce CSV Output
-    $csv_content = $dhfh_export->export_content($content_to_export, $mark_as_exported);
+    $csv_content = $dhfh_exporter->export_content($content_to_export, $mark_as_exported);
     if(isset($csv_content) && (count($csv_content) > 0)) {
-      $re_content = $dhfh_export->transform($csv_content); 
-      if(($output_filenames = $dhfh_export->save_output($re_content, $content_to_export)) &&
+      $re_content = $dhfh_exporter->transform($csv_content); 
+      if(($output_filenames = $dhfh_exporter->save_output($re_content, $content_to_export)) &&
 	 (count($output_filenames) > 0)) {
 	// Notify the User.
 	add_action('admin_notices', 'successfully_exported_content');
@@ -59,20 +58,21 @@ if($_POST['action']) {
     }
     break;
   case 'dhfh-delete-output-files':
-    $dhfh_export = new DHFHExporter();
+    $dhfh_exporter = new DHFHExporter();
     
-    $dhfh_export->clean_output_files($_POST['output-files-to-delete']);
+    $dhfh_exporter->clean_output_files($_POST['output-files-to-delete']);
 
     break;
   }
 }
 
 if($_GET['page'] == 'dhfh-data-export') {
-  // Ensure the export output directory exists.
-  if(!is_dir(DHFHExporter::output_dir()) && !mkdir(DHFHExporter::output_dir())) {
-    // Set notice to notify the user that the output directory could not be created.
+  // Verify that everything initializes correctly.
+  $dhfh_exporter = new DHFHExporter();
+
+  if($dhfh_exporter->unable_to_create_output_dir)
     add_action('admin_notices', 'unable_to_create_output_dir' );
-  }
+
 }
 
 /**
@@ -127,7 +127,7 @@ function dhfh_data_export_options() {
   require_once(DHFH_DATA_EXPORT_DIR . '/pages/admin.php');
 }
 
-/* Basic CSS styling for the admin page. */
+// Basic CSS styling for the admin page.
 function dhfh_data_export_styles() {
   wp_enqueue_style( 'dhfh_data_export_admin_css', DHFH_DATA_EXPORT_URL .'/css/dhfh_data_export_admin.css');
 }
