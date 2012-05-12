@@ -3,6 +3,7 @@
 Plugin Name: DHFH Data Export
 Plugin URI: https://github.com/hstrowd/dhfh-data-export
 Description: Exports and converts the data captured in the site's forms into separate CSV files that are able to be imported into the Dupage Habitat for Humanity's Raiser's Edge database.
+Depends: Generic Export
 Version: 0.1
 Author: Harrison Strowd
 Author URI: http://www.hstrowd.com/
@@ -23,10 +24,6 @@ License: GPL2
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-/* TODO List:
-    - List the dependency on generic exporter.
 */
 
 // Define plugin constants.
@@ -91,6 +88,9 @@ if ( is_admin() ) {
   // Actions
   add_action( 'admin_menu', 'dhfh_data_export_menu' );
   add_action( 'admin_head', 'dhfh_data_export_styles' );
+
+  register_activation_hook( __FILE__, 'verify_dependencies' );
+
 } else {
   // non-admin enqueues, actions, and filters
 }
@@ -131,6 +131,16 @@ function dhfh_data_export_styles() {
   wp_enqueue_style( 'dhfh_data_export_admin_css', DHFH_DATA_EXPORT_URL .'/css/dhfh_data_export_admin.css');
 }
 
+function verify_dependencies() {
+  require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+
+  if ( !is_plugin_active( 'generic-export/generic-export.php' ) ) {
+    // deactivate dependent plugin
+    deactivate_plugins( __FILE__);
+    exit ('Requires Generic Export plugin to be installed and active.');
+  }
+}
+
 /**
  *  END: Required WordPress Hooks
  */
@@ -141,12 +151,12 @@ function dhfh_data_export_styles() {
  */
 
 function successfully_exported_content() {
-  echo "<div class=\"success\">The requested content was successfully exported and links to the newly created files should appear in the Exported Files list below.</div>";
+  echo "<div class=\"success notice\">The requested content was successfully exported and links to the newly created files should appear in the Exported Files list below.</div>";
   remove_action('admin_notices', 'successfully_exported_content' );
 }
 
 function unable_to_create_output_dir() {
-  echo "<div class=\"warning\">Unable to create the export output directory in the " . DHFHExporter::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
+  echo "<div class=\"warning notice\">Unable to create the export output directory in the " . DHFHExporter::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
   remove_action('admin_notices', 'unable_to_create_output_dir' );
 }
 

@@ -44,7 +44,7 @@
 <div class="exported_files">
   <h3>Exported Files</h3>
   <p>The following files are available for downloading:</p>
-  <span class="warning">To clean up these files, check the checkbox next to the associated files and click the Delete button below.</span>
+  <span class="warning notice">To clean up these files, check the checkbox next to the associated files and click the Delete button below.</span>
   <form id="dhfh-delete-output-files" method="post">
     <input name="action" type="hidden" value="dhfh-delete-output-files">
     <input type="hidden" name="_wp_http_referer" 
