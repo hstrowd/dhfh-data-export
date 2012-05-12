@@ -3,7 +3,7 @@
 Plugin Name: DHFH Data Export
 Plugin URI: https://github.com/hstrowd/dhfh-data-export
 Description: Exports and converts the data captured in the site's forms into separate CSV files that are able to be imported into the Dupage Habitat for Humanity's Raiser's Edge database.
-Version: 0.01
+Version: 0.1
 Author: Harrison Strowd
 Author URI: http://www.hstrowd.com/
 License: GPL2
@@ -26,19 +26,21 @@ License: GPL2
 */
 
 /* TODO List:
-    - Add a readme.
     - List the dependency on generic exporter.
 */
 
-if(true)
-  echo "<br><br>";
-
+// Define plugin constants.
 define("DHFH_DATA_EXPORT_DIR", WP_PLUGIN_DIR."/dhfh-data-export");
 define("DHFH_DATA_EXPORT_URL", WP_PLUGIN_URL."/dhfh-data-export");
 
+// Require internal files.
 require_once( DHFH_DATA_EXPORT_DIR . '/dhfh-exporter.php' );
 
-// Handlers for user actions
+
+/**
+ *  BEGIN: Handle user actions.
+ */
+
 if($_POST['action']) {
   switch ($_POST['action']) {
   case 'dhfh-export-content':
@@ -76,10 +78,17 @@ if($_GET['page'] == 'dhfh-data-export') {
   }
 }
 
-/* Required WordPress Hooks -- BEGIN */
+/**
+ *  END: Handle user actions.
+ */
+
+
+/**
+ *  BEGIN: Required WordPress Hooks
+ */
 
 if ( is_admin() ) {
-  //Actions
+  // Actions
   add_action( 'admin_menu', 'dhfh_data_export_menu' );
   add_action( 'admin_head', 'dhfh_data_export_styles' );
 } else {
@@ -122,7 +131,14 @@ function dhfh_data_export_styles() {
   wp_enqueue_style( 'dhfh_data_export_admin_css', DHFH_DATA_EXPORT_URL .'/css/dhfh_data_export_admin.css');
 }
 
-/* Required WordPress Hooks -- END */
+/**
+ *  END: Required WordPress Hooks
+ */
+
+
+/**
+ *  BEGIN: Admin Notices
+ */
 
 function successfully_exported_content() {
   echo "<div class=\"success\">The requested content was successfully exported and links to the newly created files should appear in the Exported Files list below.</div>";
@@ -133,4 +149,8 @@ function unable_to_create_output_dir() {
   echo "<div class=\"warning\">Unable to create the export output directory in the " . DHFHExporter::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
   remove_action('admin_notices', 'unable_to_create_output_dir' );
 }
+
+/**
+ *  END: Admin Notices
+ */
 

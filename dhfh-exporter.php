@@ -1,6 +1,11 @@
 <?php
 // Encapsulates all Export Functionality for the DuPage Habitat For Humanity forms.
 class DHFHExporter {
+
+  /**
+   *  BEGIN: Static Content
+   */
+
   const UNRECOGNIZED_KEY = 'unrecognized';
   const UNRECOGNIZED_NAME = 'Unrecognized';
 
@@ -11,6 +16,15 @@ class DHFHExporter {
   public static function output_dir() {
     return DHFH_DATA_EXPORT_DIR . '/exported_files';
   }
+
+  /**
+   *  END: Static Content
+   */
+
+
+  /**
+   *  BEGIN: Export content to array
+   */
 
   // Extracts the data from the database in the form of an array of associative array.
   public function export_content($content_to_export, $mark_as_exported) {
@@ -35,6 +49,15 @@ class DHFHExporter {
 
     return $rows;
   }
+
+  /**
+   *  END: Export content to array
+   */
+
+
+  /**
+   *  BEGIN: Transform Form Data
+   */
 
   // Organizes the raw data and transforms it as necessary, producing an array that groups the 
   // records as desired.
@@ -64,10 +87,6 @@ class DHFHExporter {
 
     return $sorted_rows;
   }
-
-  /*
-   * BEGIN: Individual Form Parsing Logic
-   */
 
   public function prepare_donation_forms(&$donation_forms) {
     foreach($donation_forms as &$form_data) {
@@ -159,8 +178,13 @@ class DHFHExporter {
     $form_data['country'] = $country;
   }
 
-  /*
-   * END: Individual Form Parsing Logic
+  /**
+   *  END: Transform Form Data
+   */
+
+
+  /**
+   *  BEGIN: Write Results to Files
    */
 
   public function save_output($re_content, $content_to_export) {
@@ -229,6 +253,15 @@ class DHFHExporter {
     return NULL;
   }
 
+  /**
+   *  END: Write Results to Files
+   */
+
+
+  /**
+   *  END: Delete Old Output Files
+   */
+
   public function clean_output_files($filenames) {
     // Track the files that were deleted and those that could not be found.
     $this->files_deleted = array();
@@ -252,6 +285,11 @@ class DHFHExporter {
       add_action('admin_notices', array( &$this, 'files_not_found' ));
     }
   }
+
+  /**
+   *  END: Delete Old Output Files
+   */
+
 
   /**
    *  BEGIN: Admin Notices
