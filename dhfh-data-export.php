@@ -47,7 +47,7 @@ function load_dhfh_exporter() {
   return $exporter;
 }
 
-if($_POST['page'] == 'dhfh-data-export') {
+if(isset($_POST['page']) && ($_POST['page'] == 'dhfh-data-export')) {
   $dhfh_exporter = load_dhfh_exporter();
 
   switch ($_POST['action']) {
@@ -107,7 +107,7 @@ if($_POST['page'] == 'dhfh-data-export') {
   }
 }
 
-if($_GET['page'] == 'dhfh-data-export') {
+if(isset($_GET['page']) && $_GET['page'] == 'dhfh-data-export') {
   // Verify that everything initializes correctly.
   $dhfh_exporter = load_dhfh_exporter();
 }
