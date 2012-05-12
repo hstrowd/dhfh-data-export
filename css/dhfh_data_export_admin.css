@@ -39,16 +39,19 @@
   font-weight: bold;
 }
 
-.export_option {
+.export_actions .export_option {
   margin: 10px;
+}
+.export_actions .button {
+  margin: 5px 0 0 20px;
 }
 
 .exported_files .output_files {
   margin: 7px;
 }
-
-.dhfh_data_export_admin .button {
-  margin: 5px 0 0 20px;
+.exported_files .actions {
+  margin: 15px 0 0 20px;
 }
+
 
 

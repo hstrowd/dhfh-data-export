@@ -67,7 +67,9 @@
       </ul>
     </div>
 
-    <div>
+    <div class="actions">
+      <input type="button" value="Check All" class="button"
+             onClick="checkAll('output-files-to-delete[]')" /> |
       <input type="submit" value="Delete" class="button" />
     </div>
   </form>

@@ -88,6 +88,7 @@ if ( is_admin() ) {
   // Actions
   add_action( 'admin_menu', 'dhfh_data_export_menu' );
   add_action( 'admin_head', 'dhfh_data_export_styles' );
+  add_action( 'admin_head', 'dhfh_data_export_scripts' );
 
   register_activation_hook( __FILE__, 'verify_dependencies' );
 
@@ -129,6 +130,11 @@ function dhfh_data_export_options() {
 /* Basic CSS styling for the admin page. */
 function dhfh_data_export_styles() {
   wp_enqueue_style( 'dhfh_data_export_admin_css', DHFH_DATA_EXPORT_URL .'/css/dhfh_data_export_admin.css');
+}
+
+function dhfh_data_export_scripts() {
+  wp_enqueue_script( 'dhfh_data_export_admin_js', DHFH_DATA_EXPORT_URL .'/js/dhfh_data_export_admin.js', 
+		     array('jquery') );
 }
 
 function verify_dependencies() {
