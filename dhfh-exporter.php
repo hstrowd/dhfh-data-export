@@ -1,6 +1,9 @@
 <?php
 // Encapsulates all Export Functionality for the DuPage Habitat For Humanity forms.
 class DHFHExporter {
+  const UNRECOGNIZED_KEY = 'unrecognized';
+  const UNRECOGNIZED_NAME = 'Unrecognized';
+
   public static $dhfh_forms = array( 'volunteer' => 'Volunteer Form', 
 				     'newsletter' => 'Newsletter Form', 
 				     'donation' => 'Donation Form');
@@ -37,7 +40,7 @@ class DHFHExporter {
   // records as desired.
   public function transform($rows) {
     // Sort the rows based on the forms we know and care about.
-    $sorted_rows = array('Unrecognized' => array());
+    $sorted_rows = array(UNRECOGNIZED_NAME => array());
     foreach(self::$dhfh_forms as $prefix) {
       $sorted_rows[$prefix] = array();
     }
@@ -51,7 +54,7 @@ class DHFHExporter {
 	}
       }
       if(!$sorted) {
-	$sorted_rows['Unrecognized'][] = $row;
+	$sorted_rows[UNRECOGNIZED_NAME][] = $row;
       }
     }
 
@@ -168,19 +171,22 @@ class DHFHExporter {
     // Use this prefix for all files exported as part of this execution.
     $filename_prefix = date("Y-m-d_H.i.s") . '-' . $content_to_export;
 
-    $unrecognized_data = $re_content['Unrecognized'];
-    if(($unrecognized_file = $this->save_csv($unrecognized_data, $filename_prefix, 'unrecognized')) !== false)
-      $output_files[] = $unrecognized_file;
-    else
+    $unrecognized_data = $re_content[UNRECOGNIZED_NAME];
+    if(($unrecognized_file = $this->save_csv($unrecognized_data, $filename_prefix, UNRECOGNIZED_KEY)) === false)
       return $output_files;
+    elseif(isset($unrecognized_file))
+      $output_files[UNRECOGNIZED_NAME] = $unrecognized_file;
 
     foreach(self::$dhfh_forms as $keyword => $form_name) {
       $data = $re_content[$form_name];
-      if(($filename = $this->save_csv($data, $filename_prefix, $keyword)) !== false)
-	$output_files[] = $filename;
-      else
+      if(($filename = $this->save_csv($data, $filename_prefix, $keyword)) === false)
 	return $output_files;
+      elseif(isset($filename))
+	$output_files[$form_name] = $filename;
     }
+
+    // Removes any forms that were not found in $dhfh_forms
+    $output_files = array_filter($output_files);
 
     return $output_files;
   }
@@ -210,39 +216,89 @@ class DHFHExporter {
 	add_action('admin_notices', array( &$this, 'unable_to_create_output_file' ));
 	return false;
       }
-    } else {
+    // No need to notify the user if no content was found in the unrecognized set. 
+    } elseif($keyword != UNRECOGNIZED_KEY) {
       if(!isset($this->no_content_forms)) {
 	add_action('admin_notices', array( &$this, 'no_content_to_be_output' ));
-	$this->no_content_forms = array();
+	$this->no_content_forms = array($keyword);
       } else {
 	$this->no_content_forms[] = $keyword;
       }
-      return '';
+      return NULL;
+    }
+    return NULL;
+  }
+
+  public function clean_output_files($filenames) {
+    // Track the files that were deleted and those that could not be found.
+    $this->files_deleted = array();
+    $this->files_not_found = array();
+
+    // Check if each file exists. If so, delete it. If not, mark it as unknown.
+    foreach($filenames as $filename) {
+      $full_path = self::output_dir() . '/' . $filename;
+      if(file_exists($full_path)) {
+	unlink($full_path);
+	$this->files_deleted[] = $filename;
+      } else
+	$this->files_not_found[] = $filename;
+    }
+
+    if(count($this->files_deleted) > 0) {
+      add_action('admin_notices', array( &$this, 'files_deleted' ));
+    }
+
+    if(count($this->files_not_found) > 0) {
+      add_action('admin_notices', array( &$this, 'files_not_found' ));
     }
   }
 
+  /**
+   *  BEGIN: Admin Notices
+   */
+
   public function generic_export_not_active() {
-    echo "<div class=\"warning\">The generic export plugin is required to properly export content using this plugin. Please verify that it is installed and activated.</div>";
+    echo "<div class=\"warning notice\">The generic export plugin is required to properly export content using this plugin. Please verify that it is installed and activated.</div>";
     remove_action('admin_notices', array( &$this, 'generic_export_not_active' ));
   }
 
   public function unable_to_create_output_file() {
-    echo "<div class=\"warning\">Unable to create an output file to write the exported content to. Please verify that the web server has write access to the self::output_dir() directory. NOTE: The content was successfully exported from the database, so it has been marked as 'exported' if you requested that. You may need to manually transform the file stored by the Generic Exporter plugin.</div>";
+    echo "<div class=\"warning notice\">Unable to create an output file to write the exported content to. Please verify that the web server has write access to the self::output_dir() directory. NOTE: The content was successfully exported from the database, so it has been marked as 'exported' if you requested that. You may need to manually transform the file stored by the Generic Exporter plugin.</div>";
     remove_action('admin_notices', array( &$this, 'unable_to_create_output_file' ));
   }
 
   public function no_content_to_be_output() {
     // Identify the names of the forms that had no content.
-    $form_name_lookup = function($keyword) {
-      if($keyword == 'unrecognized')
-	return 'Unrecognized';
-      else
-	return self::$dhfh_forms[$keyword];
-    };
-    $form_names = array_map($form_name_lookup, $this->no_content_forms);
+    $form_names = array();
+    foreach($this->no_content_forms as $form_keyword) {
+      $form_names[] = self::$dhfh_forms[$form_keyword];
+    }
+
+    // Removes any forms that were not found in $dhfh_forms
+    $form_names = array_filter($form_names);
     
-    echo "<div class=\"warning\">No content was found to be exported for the following forms: " . join(', ', $form_names) . ".</div>";
+    echo "<div class=\"warning notice\">No content was found to be exported for the following forms: " . join(', ', $form_names) . ".</div>";
     remove_action('admin_notices', array( &$this, 'no_content_to_be_output' ));
   }
+
+  public function files_deleted() {
+    // Identify the files that were successfully deleted.
+    $filenames = $this->files_deleted;
+    
+    echo "<div class=\"success notice\">The following files were successfully deleted from the output directory: <ul><li>" . join('</li><li>', $filenames) . "</li></ul></div>";
+    remove_action('admin_notices', array( &$this, 'files_deleted' ));
+  }
+
+  public function files_not_found() {
+    // Identify the files that were not able to be found.
+    $filenames = $this->files_not_found;
+    
+    echo "<div class=\"error notice\">The following files could not be found in the output directory in order to delete them: <ul><li>" . join('</li><li>', $filenames) . "</li></ul></div>";
+    remove_action('admin_notices', array( &$this, 'files_not_found' ));
+  }
+
+  /**
+   *  END: Admin Notices
+   */
 
 }

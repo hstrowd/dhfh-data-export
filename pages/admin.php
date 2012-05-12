@@ -6,7 +6,7 @@
   <h3>Export Actions</h3>
   <p>To export content to be imported into Raisers edge, please select from the options below:</p>
 
-  <form id="dhfh-export-content" action method="post">
+  <form id="dhfh-export-content" method="post">
     <input name="action" type="hidden" value="dhfh-export-content">       
     <input type="hidden" name="_wp_http_referer" 
       value="/restore_dev/wp-admin/options-general.php?page=dhfh-data-export">
@@ -41,22 +41,36 @@
 <?php
   if(count($exported_files) > 0) { 
  ?>
-<div class="export">
+<div class="exported_files">
   <h3>Exported Files</h3>
   <p>The following files are available for downloading:</p>
-  <ul>
-  <?php
-    foreach(array_reverse($exported_files) as $output_filename) {
-   ?>
-    <li>
-      <a href="<?php echo DHFH_DATA_EXPORT_URL . '/exported_files/' . $output_filename; ?>">
-        <?php echo $output_filename; ?>
-      </a>
-    </li>
-  <?php
-	}
-   ?>
-  </ul>
+  <span class="warning">To clean up these files, check the checkbox next to the associated files and click the Delete button below.</span>
+  <form id="dhfh-delete-output-files" method="post">
+    <input name="action" type="hidden" value="dhfh-delete-output-files">
+    <input type="hidden" name="_wp_http_referer" 
+      value="/restore_dev/wp-admin/options-general.php?page=dhfh-data-export">
+
+    <div class="output_files">
+      <ul>
+      <?php
+        foreach(array_reverse($exported_files) as $output_filename) {
+       ?>
+        <li>
+          <input type="checkbox" name="output-files-to-delete[]" value="<?php echo $output_filename; ?>">
+          <a href="<?php echo DHFH_DATA_EXPORT_URL . '/exported_files/' . $output_filename; ?>">
+            <?php echo $output_filename; ?>
+          </a>
+        </li>
+      <?php
+    	}
+       ?>
+      </ul>
+    </div>
+
+    <div>
+      <input type="submit" value="Delete" class="button" />
+    </div>
+  </form>
 </div>
 <?php
   }

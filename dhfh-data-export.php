@@ -28,7 +28,6 @@ License: GPL2
 /* TODO List:
     - Add a readme.
     - List the dependency on generic exporter.
-    - Add a way to clear the output files.
 */
 
 if(true)
@@ -51,13 +50,20 @@ if($_POST['action']) {
 
     // Produce CSV Output
     $csv_content = $dhfh_export->export_content($content_to_export, $mark_as_exported);
-    if(isset($csv_content)) {
+    if(isset($csv_content) && (count($csv_content) > 0)) {
       $re_content = $dhfh_export->transform($csv_content); 
-      if($dhfh_export->save_output($re_content, $content_to_export)) {
+      if(($output_filenames = $dhfh_export->save_output($re_content, $content_to_export)) &&
+	 (count($output_filenames) > 0)) {
 	// Notify the User.
 	add_action('admin_notices', 'successfully_exported_content');
       }
     }
+    break;
+  case 'dhfh-delete-output-files':
+    $dhfh_export = new DHFHExporter();
+    
+    $dhfh_export->clean_output_files($_POST['output-files-to-delete']);
+
     break;
   }
 }
@@ -65,7 +71,7 @@ if($_POST['action']) {
 if($_GET['page'] == 'dhfh-data-export') {
   // Ensure the export output directory exists.
   if(!is_dir(DHFHExporter::output_dir()) && !mkdir(DHFHExporter::output_dir())) {
-    // Set notice to notify the user that the backups directory could not be created.
+    // Set notice to notify the user that the output directory could not be created.
     add_action('admin_notices', 'unable_to_create_output_dir' );
   }
 }
@@ -96,7 +102,7 @@ function dhfh_data_export_options() {
     wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
   }
 
-  // Build a list of all backup files.
+  // Build a list of all output files.
   $exported_files = array();
   if($dir_handle = opendir(DHFHExporter::output_dir())) {
     while (false !== ($output_filename = readdir($dir_handle))) {
@@ -127,3 +133,4 @@ function unable_to_create_output_dir() {
   echo "<div class=\"warning\">Unable to create the export output directory in the " . DHFHExporter::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
   remove_action('admin_notices', 'unable_to_create_output_dir' );
 }
+

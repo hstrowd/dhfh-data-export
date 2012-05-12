@@ -1,7 +1,7 @@
-.error, .warning, .success {
+.notice {
   max-width: 600px;
-  margin: 10px 0 20px 0;
-  padding: 6px 10px;
+  margin: 10px 0 10px 15px;
+  padding: 3px 6px;
   border: 1px solid #D8D8D8;
   -webkit-border-radius: 4px
   -moz-border-radius: 4px;
@@ -17,6 +17,12 @@
 }
 .success {
   background-color: #C3FDB8;
+}
+.notice ul{
+  margin: 5px 0;
+}
+.notice li{
+  margin: 0 0 0 15px;
 }
 
 .dhfh_data_export_admin h2 {
@@ -36,6 +42,13 @@
 .export_option {
   margin: 10px;
 }
-.export .button {
+
+.exported_files .output_files {
+  margin: 7px;
+}
+
+.dhfh_data_export_admin .button {
   margin: 5px 0 0 20px;
 }
+
+
