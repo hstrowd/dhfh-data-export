@@ -42,10 +42,8 @@ class DHFHExporter {
   // Extracts the data from the database in the form of an array of associative array.
   public function export_content($content_to_export, $mark_as_exported) {
     require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-    if(!is_plugin_active('generic-export/generic-export.php')) {
-      add_action('admin_notices', array( &$this, 'generic_export_not_active' ));
-      return;
-    }
+    if(!is_plugin_active('generic-export/generic-export.php'))
+      return array('generic_export_not_active');
 
     require_once( WP_PLUGIN_DIR . '/generic-export/generic-exporter.php' );
     $generic_exporter = new GenericExporter();
@@ -208,67 +206,72 @@ class DHFHExporter {
   public function save_output($re_content, $content_to_export) {
     require_once( DHFH_DATA_EXPORT_DIR . '/lib/parsecsv-0.4.3-beta/parsecsv.lib.php' );
 
-    $output_files = array();
+    $results = array('saved' => array(), 'no_content' => array());
 
     // Use this prefix for all files exported as part of this execution.
     $filename_prefix = date("Y-m-d_H.i.s") . '-' . $content_to_export;
 
     $unrecognized_data = $re_content[UNRECOGNIZED_NAME];
-    if(($unrecognized_file = $this->save_csv($unrecognized_data, $filename_prefix, UNRECOGNIZED_KEY)) === false)
-      return $output_files;
-    elseif(isset($unrecognized_file))
-      $output_files[UNRECOGNIZED_NAME] = $unrecognized_file;
+    $save_result = $this->save_csv($unrecognized_data, $filename_prefix, UNRECOGNIZED_KEY);
+    switch($save_result[0]) {
+    case 'saved':
+      $results['saved'][$form_name] = $save_result[1];
+      break;
+    case 'unable_to_create_output_file':
+      $results['unable_to_create_output_file'] = TRUE;
+      return $results;
+      break;
+    }
 
     foreach(self::$dhfh_forms as $keyword => $form_name) {
       $data = $re_content[$form_name];
-      if(($filename = $this->save_csv($data, $filename_prefix, $keyword)) === false)
-	return $output_files;
-      elseif(isset($filename))
-	$output_files[$form_name] = $filename;
+      $save_result = $this->save_csv($data, $filename_prefix, $keyword);
+      switch($save_result[0]) {
+      case 'saved':
+	$results['saved'][$form_name] = $save_result[1];
+	break;
+      case 'no_content_found':
+	$results['no_content'][] = $form_name;
+	break;
+      case 'unable_to_create_output_file':
+	$results['unable_to_create_output_file'] = TRUE;
+	return $results;
+	break;
+      }
     }
 
-    // Removes any forms that were not found in $dhfh_forms
-    $output_files = array_filter($output_files);
-
-    return $output_files;
+    return $results;
   }
 
   // Returns false if an error occured that should prevent all remaining files from being saved.
   public function save_csv($csv_data, $filename_prefix, $keyword) {
     // If there is no data to save, skip this one, but let the rest continue. 
     if(isset($csv_data) && count($csv_data) > 0) {
-      $filename = self::output_dir() . "/$filename_prefix-$keyword.csv";
+      $filename = "$filename_prefix-$keyword.csv";
+      $full_path = self::output_dir() . '/' . $filename;
 
       // Make the first row the headers.
       $headers = array_keys($csv_data[0]);
       array_unshift($csv_data, $headers);
 
       // Must create the file before ParseCSV can save into it.
-      if($file_handle = fopen($filename, 'w')) {
+      if($file_handle = fopen($full_path, 'w')) {
 	fclose($file_handle);
 
 	// Save the Form data.
 	$parse_csv = new ParseCSV();
-	$result = $parse_csv->save($filename, $csv_data);
+	$result = $parse_csv->save($full_path, $csv_data);
 
-	return $filename;
+	return array('saved', $filename);
       } else {
 	// If the file cannot be written to, skip this on and prevent the rest from continuing. 
 	// Add notice here
-	add_action('admin_notices', array( &$this, 'unable_to_create_output_file' ));
-	return false;
+	return array('unable_to_create_output_file');
       }
     // No need to notify the user if no content was found in the unrecognized set. 
-    } elseif($keyword != UNRECOGNIZED_KEY) {
-      if(!isset($this->no_content_forms)) {
-	add_action('admin_notices', array( &$this, 'no_content_to_be_output' ));
-	$this->no_content_forms = array($keyword);
-      } else {
-	$this->no_content_forms[] = $keyword;
-      }
-      return NULL;
+    } else {
+      return array('no_content_found');
     }
-    return NULL;
   }
 
   /**
@@ -282,79 +285,23 @@ class DHFHExporter {
 
   public function clean_output_files($filenames) {
     // Track the files that were deleted and those that could not be found.
-    $this->files_deleted = array();
-    $this->files_not_found = array();
+    $files_deleted = array();
+    $files_not_found = array();
 
     // Check if each file exists. If so, delete it. If not, mark it as unknown.
     foreach($filenames as $filename) {
       $full_path = self::output_dir() . '/' . $filename;
       if(file_exists($full_path)) {
 	unlink($full_path);
-	$this->files_deleted[] = $filename;
+	$files_deleted[] = $filename;
       } else
-	$this->files_not_found[] = $filename;
+	$files_not_found[] = $filename;
     }
 
-    if(count($this->files_deleted) > 0) {
-      add_action('admin_notices', array( &$this, 'files_deleted' ));
-    }
-
-    if(count($this->files_not_found) > 0) {
-      add_action('admin_notices', array( &$this, 'files_not_found' ));
-    }
+    return array('files_deleted' => $files_deleted, 'files_not_found' => $files_not_found);
   }
 
   /**
    *  END: Delete Old Output Files
    */
-
-
-  /**
-   *  BEGIN: Admin Notices
-   */
-
-  public function generic_export_not_active() {
-    echo "<div class=\"warning notice\">The generic export plugin is required to properly export content using this plugin. Please verify that it is installed and activated.</div>";
-    remove_action('admin_notices', array( &$this, 'generic_export_not_active' ));
-  }
-
-  public function unable_to_create_output_file() {
-    echo "<div class=\"warning notice\">Unable to create an output file to write the exported content to. Please verify that the web server has write access to the self::output_dir() directory. NOTE: The content was successfully exported from the database, so it has been marked as 'exported' if you requested that. You may need to manually transform the file stored by the Generic Exporter plugin.</div>";
-    remove_action('admin_notices', array( &$this, 'unable_to_create_output_file' ));
-  }
-
-  public function no_content_to_be_output() {
-    // Identify the names of the forms that had no content.
-    $form_names = array();
-    foreach($this->no_content_forms as $form_keyword) {
-      $form_names[] = self::$dhfh_forms[$form_keyword];
-    }
-
-    // Removes any forms that were not found in $dhfh_forms
-    $form_names = array_filter($form_names);
-    
-    echo "<div class=\"warning notice\">No content was found to be exported for the following forms: " . join(', ', $form_names) . ".</div>";
-    remove_action('admin_notices', array( &$this, 'no_content_to_be_output' ));
-  }
-
-  public function files_deleted() {
-    // Identify the files that were successfully deleted.
-    $filenames = $this->files_deleted;
-    
-    echo "<div class=\"success notice\">The following files were successfully deleted from the output directory: <ul><li>" . join('</li><li>', $filenames) . "</li></ul></div>";
-    remove_action('admin_notices', array( &$this, 'files_deleted' ));
-  }
-
-  public function files_not_found() {
-    // Identify the files that were not able to be found.
-    $filenames = $this->files_not_found;
-    
-    echo "<div class=\"error notice\">The following files could not be found in the output directory in order to delete them: <ul><li>" . join('</li><li>', $filenames) . "</li></ul></div>";
-    remove_action('admin_notices', array( &$this, 'files_not_found' ));
-  }
-
-  /**
-   *  END: Admin Notices
-   */
-
 }

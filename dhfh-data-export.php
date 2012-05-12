@@ -65,10 +65,18 @@ if($_POST['page'] == 'dhfh-data-export') {
 
       if(isset($csv_content) && (count($csv_content) > 0)) {
 	$re_content = $dhfh_exporter->transform($csv_content); 
-	if(($output_filenames = $dhfh_exporter->save_output($re_content, $content_to_export)) &&
-	   (count($output_filenames) > 0)) {
-	  // Notify the User.
-	  add_action('admin_notices', 'successfully_exported_content');
+	if($save_results = $dhfh_exporter->save_output($re_content, $content_to_export)) {
+	  if(count($save_results['saved']) > 0) {
+	    $_SESSION['exported_forms'] = $save_results['saved'];
+	    add_action('admin_notices', 'successfully_exported_content');
+	  }
+	  if(count($save_results['no_content']) > 0) {
+	    $_SESSION['no_content_forms'] = $save_results['no_content'];
+	    add_action('admin_notices', 'no_content_to_output');
+	  }
+	  if($save_results['unable_to_create_output_file']) {
+	    add_action('admin_notices', 'unable_to_create_output_file');
+	  }
 	}
       } else {
 	// Defined by the Generic Export plugin.
@@ -83,7 +91,18 @@ if($_POST['page'] == 'dhfh-data-export') {
     }
     break;
   case 'dhfh-delete-output-files':
-    $dhfh_exporter->clean_output_files($_POST['output-files-to-delete']);
+    $delete_results = $dhfh_exporter->clean_output_files($_POST['output-files-to-delete']);
+
+    if(count($delete_results['files_deleted']) > 0) {
+      $_SESSION['files_deleted'] = $delete_results['files_deleted'];
+      add_action('admin_notices', 'dhfh_files_deleted');
+    }
+
+    if(count($delete_results['files_not_found']) > 0) {
+      $_SESSION['files_not_found'] = $delete_results['files_not_found'];
+      add_action('admin_notices', 'dhfh_files_not_found');
+    }
+
     break;
   }
 }
@@ -175,14 +194,55 @@ function verify_dependencies() {
  *  BEGIN: Admin Notices
  */
 
+function generic_export_not_active() {
+  echo "<div class=\"warning notice\">The generic export plugin is required to properly export content using this plugin. Please verify that it is installed and activated.</div>";
+  remove_action('admin_notices', 'generic_export_not_active');
+}
+
+function unable_to_create_output_file() {
+  echo "<div class=\"warning notice\">Unable to create an output file to write the exported content to. Please verify that the web server has write access to the " . DHFHExporter::output_dir() . " directory. NOTE: The content was successfully exported from the database, so it has been marked as 'exported' if you requested that. You may need to manually transform the file stored by the Generic Exporter plugin.</div>";
+  remove_action('admin_notices', 'unable_to_create_output_file');
+}
+
 function successfully_exported_content() {
-  echo "<div class=\"success notice\">The requested content was successfully exported and links to the newly created files should appear in the Exported Files list below.</div>";
+  $exported_files = array();
+  foreach($_SESSION['exported_forms'] as $form_name => $filename) {
+    $exported_files[] = "$form_name: $filename";
+  }
+
+  echo "<div class=\"success notice\">The following forms were successfully exported. Links to these files appear in the Exported Files list below.
+<ul><li>" . join('</li><li>', $exported_files) . "</div>";
   remove_action('admin_notices', 'successfully_exported_content' );
+}
+
+function no_content_to_output() {
+  // Removes any forms that were not found in $dhfh_forms
+  $form_names = array_filter($_SESSION['no_content_forms']);
+    
+  echo "<div class=\"warning notice\">No content was found to be exported for the following forms: " . join(', ', $form_names) . ".</div>";
+  remove_action('admin_notices', 'no_content_to_output');
 }
 
 function unable_to_create_output_dir() {
   echo "<div class=\"warning notice\">Unable to create the export output directory in the " . DHFHExporter::output_dir() . " directory. Please make sure that the web server has write access to this directory.</div>";
   remove_action('admin_notices', 'unable_to_create_output_dir' );
+}
+
+
+function dhfh_files_deleted() {
+  // Identify the files that were successfully deleted.
+  $filenames = $_SESSION['files_deleted'];
+    
+  echo "<div class=\"success notice\">The following files were successfully deleted from the output directory: <ul><li>" . join('</li><li>', $filenames) . "</li></ul></div>";
+  remove_action('admin_notices', 'dhfh_files_deleted');
+}
+
+function dhfh_files_not_found() {
+  // Identify the files that were not able to be found.
+  $filenames = $_SESSION['files_not_found'];
+    
+  echo "<div class=\"error notice\">The following files could not be found in the output directory in order to delete them: <ul><li>" . join('</li><li>', $filenames) . "</li></ul></div>";
+  remove_action('admin_notices', 'dhfh_files_not_found');
 }
 
 /**
