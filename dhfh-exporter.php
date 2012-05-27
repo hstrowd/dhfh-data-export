@@ -99,13 +99,17 @@ class DHFHExporter {
 
     $this->prepare_volunteer_forms($sorted_rows['Volunteer Form']);
     $this->prepare_donation_forms($sorted_rows['Donation Form']);
-    // No transformation is needed for the Newsletter Form.
+    $this->prepare_newsletter_forms($sorted_rows['Newsletter Form']);
 
     return $sorted_rows;
   }
 
   public function prepare_donation_forms(&$donation_forms) {
     foreach($donation_forms as &$form_data) {
+      $this->set_import_id($form_data, 'don');
+      $this->set_key_indicator($form_data);
+      $this->set_title($form_data);
+      $this->parse_email_fields($form_data);
       // Extract the pickup options into separate columns.
       if(isset($form_data[21])) {
 	$pickup_options = explode(',', $form_data[21]);
@@ -119,11 +123,54 @@ class DHFHExporter {
     }
   }
 
-  public function prepare_volunteer_forms(&$donation_forms) {
-    foreach($donation_forms as &$form_data) {
+  public function prepare_volunteer_forms(&$volunteer_forms) {
+    foreach($volunteer_forms as &$form_data) {
+      $this->set_import_id($form_data, 'vol');
+      $this->set_key_indicator($form_data);
+      $this->set_title($form_data);
+      $this->parse_email_fields($form_data);
       // Extract the parts of the address.
       $this->parse_address($form_data);
     }
+  }
+
+  public function prepare_newsletter_forms(&$newsletter_forms) {
+    foreach($newsletter_forms as &$form_data) {
+      $this->set_import_id($form_data, 'news');
+      $this->set_key_indicator($form_data);
+      $this->set_title($form_data);
+      $this->parse_email_fields($form_data);
+      $this->add_contact_category_attribute($form_data, 'ReStore Newsletter');
+    }
+  }
+
+
+  public function set_import_id(&$form_data, $form_id, $record_id_key = 'Entries ID') {
+    $record_id = $form_data[$record_id_key];
+    $form_data['import_id'] = "wp" . $form_id . $record_id;
+  }
+
+  public function set_key_indicator(&$form_data) {
+    $form_data['key_indicator'] = '';
+  }
+
+  public function set_title(&$form_data) {
+    $form_data['title'] = 'Unknown';
+  }
+
+  public function parse_email_fields(&$form_data, $email_key = 'Email', $import_id_key = 'import_id') {
+    $email_address = $form_data[$email_key];
+    $import_id = $form_data['import_id'];
+    $form_data['address_import_id'] = $import_id;
+    $form_data['phone_address_import_id'] = $import_id;
+    $form_data['phone_import_id'] = $import_id;
+    $form_data['phone_type'] = 'Email';
+  }
+
+  public function add_contact_category_attribute(&$form_data, $attribute_value) {
+    $form_data['attribute_import_id'] = $form_data['import_id'];
+    $form_data['attribute_category'] = 'Contact Category';
+    $form_data['attribute_description'] = $attribute_value;
   }
 
   // NOTE: This is very brittle and error prone, but given the data Visual Form Bulider provides, 
