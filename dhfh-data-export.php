@@ -159,6 +159,7 @@ function dhfh_data_export_options() {
       }
     }
   }
+  sort($exported_files);
 
   // Defines the structure of the admin page.
   require_once(DHFH_DATA_EXPORT_DIR . '/pages/admin.php');
